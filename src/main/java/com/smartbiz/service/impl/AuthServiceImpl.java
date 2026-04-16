@@ -9,6 +9,7 @@ import com.smartbiz.enums.SubscriptionPlan;
 import com.smartbiz.enums.UserRole;
 import com.smartbiz.repository.BusinessRepository;
 import com.smartbiz.repository.UserRepository;
+import com.smartbiz.security.JwtService;
 import com.smartbiz.service.AuthService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,13 +20,16 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final BusinessRepository businessRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthServiceImpl(UserRepository userRepository,
                            BusinessRepository businessRepository,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder,
+                           JwtService jwtService) {
         this.userRepository = userRepository;
         this.businessRepository = businessRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -55,7 +59,8 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(owner);
 
-        return new AuthResponseDto("dummy-token", "Registration successful");
+        String token = jwtService.generateToken(owner.getEmail());
+        return new AuthResponseDto(token, "Registration successful");
     }
 
     @Override
@@ -70,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
             return new AuthResponseDto(null, "Invalid password");
         }
 
-        return new AuthResponseDto("dummy-token", "Login successful");
+        String token = jwtService.generateToken(user.getEmail());
+        return new AuthResponseDto(token, "Login successful");
     }
 }
