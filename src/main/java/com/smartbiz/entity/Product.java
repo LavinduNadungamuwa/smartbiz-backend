@@ -1,6 +1,6 @@
 package com.smartbiz.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,8 +35,8 @@ public class Product {
     private LocalDateTime createdAt;
 
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "business_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Business business;
 
     @ManyToOne

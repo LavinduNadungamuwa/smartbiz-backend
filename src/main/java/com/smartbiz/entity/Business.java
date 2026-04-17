@@ -37,6 +37,12 @@ public class Business {
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL)
     private List<User> users;
 
+//    import com.fasterxml.jackson.annotation.JsonIgnore;
+//
+//    @OneToMany(mappedBy = "business")
+//    @JsonIgnore
+//    private List<Customer> customers;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
