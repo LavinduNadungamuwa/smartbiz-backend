@@ -21,6 +21,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/customers/**").permitAll()
                         .requestMatchers("/api/products/**").permitAll()
                         .requestMatchers("/api/suppliers/**").permitAll()
+                        .requestMatchers("/api/sales/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
