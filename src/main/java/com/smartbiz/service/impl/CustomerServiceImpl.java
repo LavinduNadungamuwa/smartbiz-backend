@@ -32,6 +32,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .phone(request.getPhone())
+                .address(request.getAddress())
                 .business(business)
                 .build();
 
@@ -80,6 +81,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .fullName(customer.getFullName())
                 .email(customer.getEmail())
                 .phone(customer.getPhone())
+                .address(customer.getAddress())
                 .businessId(customer.getBusiness().getId())
                 .build();
     }
