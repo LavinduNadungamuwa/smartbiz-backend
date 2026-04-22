@@ -3,6 +3,7 @@ package com.smartbiz.controller;
 import com.smartbiz.dto.AiRequestDto;
 import com.smartbiz.dto.AiResponseDto;
 import com.smartbiz.service.AiService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class AiController {
 
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @PostMapping("/ask")
-    public AiResponseDto askQuestion(@RequestBody AiRequestDto request) {
+    public AiResponseDto askQuestion(@Valid @RequestBody AiRequestDto request) {
         return aiService.askQuestion(request.getQuestion());
     }
 }

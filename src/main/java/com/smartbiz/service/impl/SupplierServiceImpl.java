@@ -5,10 +5,13 @@ import com.smartbiz.dto.SupplierResponseDto;
 import com.smartbiz.entity.Business;
 import com.smartbiz.entity.Supplier;
 import com.smartbiz.entity.User;
+import com.smartbiz.exception.AccessDeniedException;
+import com.smartbiz.exception.ResourceNotFoundException;
 import com.smartbiz.repository.SupplierRepository;
 import com.smartbiz.repository.UserRepository;
 import com.smartbiz.security.SecurityUtils;
 import com.smartbiz.service.SupplierService;
+import com.smartbiz.util.SecurityHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,7 +30,7 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public SupplierResponseDto saveSupplier(SupplierRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Business business = loggedInUser.getBusiness();
 
         Supplier supplier = Supplier.builder()
@@ -44,7 +47,7 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public List<SupplierResponseDto> getAllSuppliers() {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         return supplierRepository.findByBusinessId(businessId)
@@ -55,14 +58,14 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public SupplierResponseDto getSupplierById(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Supplier supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Supplier not found"));
 
         if (!supplier.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         return mapToDto(supplier);
@@ -70,14 +73,14 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public SupplierResponseDto updateSupplier(Long id, SupplierRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Supplier existing = supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Supplier not found"));
 
         if (!existing.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         existing.setSupplierName(request.getSupplierName());
@@ -91,32 +94,19 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public void deleteSupplier(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Supplier supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Supplier not found"));
 
         if (!supplier.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         supplierRepository.deleteById(id);
     }
 
-    // 🔑 Get logged-in user from JWT
-    private User getLoggedInUser() {
-        String email = SecurityUtils.getCurrentUserEmail();
-
-        if (email == null) {
-            throw new RuntimeException("No authenticated user found");
-        }
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
-    }
-
-    // 🔄 Map entity → DTO
     private SupplierResponseDto mapToDto(Supplier supplier) {
         return SupplierResponseDto.builder()
                 .id(supplier.getId())

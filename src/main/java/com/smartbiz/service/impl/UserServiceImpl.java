@@ -5,9 +5,12 @@ import com.smartbiz.dto.UserResponseDto;
 import com.smartbiz.entity.Business;
 import com.smartbiz.entity.User;
 import com.smartbiz.enums.UserRole;
+import com.smartbiz.exception.AccessDeniedException;
+import com.smartbiz.exception.BadRequestException;
+import com.smartbiz.exception.ResourceNotFoundException;
 import com.smartbiz.repository.UserRepository;
-import com.smartbiz.security.SecurityUtils;
 import com.smartbiz.service.UserService;
+import com.smartbiz.util.SecurityHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,15 +30,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDto createUser(UserRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Business business = loggedInUser.getBusiness();
 
         if (request.getRole() == UserRole.ADMIN) {
-            throw new RuntimeException("Cannot create another ADMIN from this endpoint");
+            throw new BadRequestException("Cannot create another ADMIN from this endpoint");
         }
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+            throw new BadRequestException("Email already exists");
         }
 
         User user = User.builder()
@@ -53,7 +56,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserResponseDto> getAllUsers() {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         return userRepository.findByBusinessId(businessId)
@@ -64,14 +67,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDto getUserById(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!user.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         return mapToDto(user);
@@ -79,18 +82,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDto updateUser(Long id, UserRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         User existing = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!existing.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         if (existing.getRole() == UserRole.ADMIN) {
-            throw new RuntimeException("Admin user cannot be modified here");
+            throw new BadRequestException("Admin user cannot be modified here");
         }
 
         existing.setFullName(request.getFullName());
@@ -108,32 +111,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!user.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         if (user.getRole() == UserRole.ADMIN) {
-            throw new RuntimeException("Admin user cannot be deleted here");
+            throw new BadRequestException("Admin user cannot be deleted here");
         }
 
         userRepository.deleteById(id);
-    }
-
-    private User getLoggedInUser() {
-        String email = SecurityUtils.getCurrentUserEmail();
-
-        if (email == null) {
-            throw new RuntimeException("No authenticated user found");
-        }
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
     }
 
     private UserResponseDto mapToDto(User user) {

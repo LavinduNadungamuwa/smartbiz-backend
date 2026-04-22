@@ -9,6 +9,7 @@ import com.smartbiz.repository.SaleRepository;
 import com.smartbiz.repository.UserRepository;
 import com.smartbiz.security.SecurityUtils;
 import com.smartbiz.service.AiService;
+import com.smartbiz.util.SecurityHelper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class AiServiceImpl implements AiService {
     private final ProductRepository productRepository;
     private final SaleRepository saleRepository;
     private final ExpenseRepository expenseRepository;
+    private final RestTemplate restTemplate;
 
     public AiServiceImpl(UserRepository userRepository,
                          CustomerRepository customerRepository,
@@ -45,11 +47,12 @@ public class AiServiceImpl implements AiService {
         this.productRepository = productRepository;
         this.saleRepository = saleRepository;
         this.expenseRepository = expenseRepository;
+        this.restTemplate = new RestTemplate();
     }
 
     @Override
     public AiResponseDto askQuestion(String question) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         long totalCustomers = customerRepository.findByBusinessId(businessId).size();
@@ -80,10 +83,14 @@ public class AiServiceImpl implements AiService {
                 netProfit
         );
 
-        RestTemplate restTemplate = new RestTemplate();
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+
+        if (openAiApiKey == null || openAiApiKey.isBlank() || openAiApiKey.equals("YOUR_OPENAI_API_KEY")) {
+            String mockAnswer = generateMockResponse(totalRevenue, totalExpenses, netProfit);
+            return new AiResponseDto(mockAnswer);
+        }
+
         headers.setBearerAuth(openAiApiKey);
 
         OpenAiRequest requestBody = OpenAiRequest.builder()
@@ -133,17 +140,6 @@ public class AiServiceImpl implements AiService {
         }
 
         /// ////////////////////////////////////////////////////////////////////////////////////////
-    }
-
-    private User getLoggedInUser() {
-        String email = SecurityUtils.getCurrentUserEmail();
-
-        if (email == null) {
-            throw new RuntimeException("No authenticated user found");
-        }
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
     }
 
     private String buildPrompt(String question,
