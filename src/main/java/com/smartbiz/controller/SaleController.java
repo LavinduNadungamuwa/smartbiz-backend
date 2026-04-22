@@ -3,6 +3,7 @@ package com.smartbiz.controller;
 import com.smartbiz.dto.SaleRequestDto;
 import com.smartbiz.dto.SaleResponseDto;
 import com.smartbiz.service.SaleService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class SaleController {
 
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @PostMapping
-    public SaleResponseDto createSale(@RequestBody SaleRequestDto request) {
+    public SaleResponseDto createSale(@Valid @RequestBody SaleRequestDto request) {
         return saleService.saveSale(request);
     }
 
@@ -40,7 +41,7 @@ public class SaleController {
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @PutMapping("/{id}")
     public SaleResponseDto updateSale(@PathVariable Long id,
-                                      @RequestBody SaleRequestDto request) {
+                                      @Valid @RequestBody SaleRequestDto request) {
         return saleService.updateSale(id, request);
     }
 

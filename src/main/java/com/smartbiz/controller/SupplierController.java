@@ -3,6 +3,7 @@ package com.smartbiz.controller;
 import com.smartbiz.dto.SupplierRequestDto;
 import com.smartbiz.dto.SupplierResponseDto;
 import com.smartbiz.service.SupplierService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class SupplierController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public SupplierResponseDto createSupplier(@RequestBody SupplierRequestDto request) {
+    public SupplierResponseDto createSupplier(@Valid @RequestBody SupplierRequestDto request) {
         return supplierService.saveSupplier(request);
     }
 
@@ -40,7 +41,7 @@ public class SupplierController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public SupplierResponseDto updateSupplier(@PathVariable Long id,
-                                              @RequestBody SupplierRequestDto request) {
+                                              @Valid @RequestBody SupplierRequestDto request) {
         return supplierService.updateSupplier(id, request);
     }
 

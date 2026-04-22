@@ -5,10 +5,12 @@ import com.smartbiz.dto.CustomerResponseDto;
 import com.smartbiz.entity.Business;
 import com.smartbiz.entity.Customer;
 import com.smartbiz.entity.User;
+import com.smartbiz.exception.AccessDeniedException;
+import com.smartbiz.exception.ResourceNotFoundException;
 import com.smartbiz.repository.CustomerRepository;
 import com.smartbiz.repository.UserRepository;
-import com.smartbiz.security.SecurityUtils;
 import com.smartbiz.service.CustomerService;
+import com.smartbiz.util.SecurityHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,7 +29,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerResponseDto saveCustomer(CustomerRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Business business = loggedInUser.getBusiness();
 
         Customer customer = Customer.builder()
@@ -44,26 +46,25 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public List<CustomerResponseDto> getAllCustomers() {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
-        return customerRepository.findAll()
+        return customerRepository.findByBusinessId(businessId)
                 .stream()
-                .filter(customer -> customer.getBusiness().getId().equals(businessId))
                 .map(this::mapToDto)
                 .toList();
     }
 
     @Override
     public CustomerResponseDto getCustomerById(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
         if (!customer.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         return mapToDto(customer);
@@ -71,14 +72,14 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerResponseDto updateCustomer(Long id, CustomerRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Customer existing = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
         if (!existing.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         existing.setFullName(request.getFullName());
@@ -92,28 +93,17 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public void deleteCustomer(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
         if (!customer.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         customerRepository.deleteById(id);
-    }
-
-    private User getLoggedInUser() {
-        String email = SecurityUtils.getCurrentUserEmail();
-
-        if (email == null) {
-            throw new RuntimeException("No authenticated user found");
-        }
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
     }
 
     private CustomerResponseDto mapToDto(Customer customer) {

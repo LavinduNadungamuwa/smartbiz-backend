@@ -3,6 +3,7 @@ package com.smartbiz.controller;
 import com.smartbiz.dto.UserRequestDto;
 import com.smartbiz.dto.UserResponseDto;
 import com.smartbiz.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public UserResponseDto createUser(@RequestBody UserRequestDto request) {
+    public UserResponseDto createUser(@Valid @RequestBody UserRequestDto request) {
         return userService.createUser(request);
     }
 
@@ -40,7 +41,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public UserResponseDto updateUser(@PathVariable Long id,
-                                      @RequestBody UserRequestDto request) {
+                                      @Valid @RequestBody UserRequestDto request) {
         return userService.updateUser(id, request);
     }
 

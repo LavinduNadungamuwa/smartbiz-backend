@@ -3,6 +3,7 @@ package com.smartbiz.controller;
 import com.smartbiz.dto.ExpenseRequestDto;
 import com.smartbiz.dto.ExpenseResponseDto;
 import com.smartbiz.service.ExpenseService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class ExpenseController {
 
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @PostMapping
-    public ExpenseResponseDto createExpense(@RequestBody ExpenseRequestDto request) {
+    public ExpenseResponseDto createExpense(@Valid @RequestBody ExpenseRequestDto request) {
         return expenseService.saveExpense(request);
     }
 
@@ -40,7 +41,7 @@ public class ExpenseController {
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @PutMapping("/{id}")
     public ExpenseResponseDto updateExpense(@PathVariable Long id,
-                                            @RequestBody ExpenseRequestDto request) {
+                                            @Valid @RequestBody ExpenseRequestDto request) {
         return expenseService.updateExpense(id, request);
     }
 
