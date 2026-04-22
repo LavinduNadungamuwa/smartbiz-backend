@@ -6,11 +6,13 @@ import com.smartbiz.entity.Business;
 import com.smartbiz.entity.Product;
 import com.smartbiz.entity.Supplier;
 import com.smartbiz.entity.User;
+import com.smartbiz.exception.AccessDeniedException;
+import com.smartbiz.exception.ResourceNotFoundException;
 import com.smartbiz.repository.ProductRepository;
 import com.smartbiz.repository.SupplierRepository;
 import com.smartbiz.repository.UserRepository;
-import com.smartbiz.security.SecurityUtils;
 import com.smartbiz.service.ProductService;
+import com.smartbiz.util.SecurityHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,16 +34,16 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponseDto saveProduct(ProductRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Business business = loggedInUser.getBusiness();
 
         Supplier supplier = null;
         if (request.getSupplierId() != null) {
             supplier = supplierRepository.findById(request.getSupplierId())
-                    .orElseThrow(() -> new RuntimeException("Supplier not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Supplier not found"));
 
             if (!supplier.getBusiness().getId().equals(business.getId())) {
-                throw new RuntimeException("Access denied");
+                throw new AccessDeniedException("Access denied");
             }
         }
 
@@ -61,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductResponseDto> getAllProducts() {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         return productRepository.findByBusinessId(businessId)
@@ -72,14 +74,14 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponseDto getProductById(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         if (!product.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         return mapToDto(product);
@@ -87,24 +89,24 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponseDto updateProduct(Long id, ProductRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Business business = loggedInUser.getBusiness();
         Long businessId = business.getId();
 
         Product existing = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         if (!existing.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         Supplier supplier = null;
         if (request.getSupplierId() != null) {
             supplier = supplierRepository.findById(request.getSupplierId())
-                    .orElseThrow(() -> new RuntimeException("Supplier not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Supplier not found"));
 
             if (!supplier.getBusiness().getId().equals(businessId)) {
-                throw new RuntimeException("Access denied");
+                throw new AccessDeniedException("Access denied");
             }
         }
 
@@ -121,28 +123,17 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void deleteProduct(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         if (!product.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         productRepository.deleteById(id);
-    }
-
-    private User getLoggedInUser() {
-        String email = SecurityUtils.getCurrentUserEmail();
-
-        if (email == null) {
-            throw new RuntimeException("No authenticated user found");
-        }
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
     }
 
     private ProductResponseDto mapToDto(Product product) {

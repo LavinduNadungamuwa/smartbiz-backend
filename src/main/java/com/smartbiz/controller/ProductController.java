@@ -3,6 +3,7 @@ package com.smartbiz.controller;
 import com.smartbiz.dto.ProductRequestDto;
 import com.smartbiz.dto.ProductResponseDto;
 import com.smartbiz.service.ProductService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class ProductController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ProductResponseDto createProduct(@RequestBody ProductRequestDto request) {
+    public ProductResponseDto createProduct(@Valid @RequestBody ProductRequestDto request) {
         return productService.saveProduct(request);
     }
 
@@ -40,7 +41,7 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ProductResponseDto updateProduct(@PathVariable Long id,
-                                            @RequestBody ProductRequestDto request) {
+                                            @Valid @RequestBody ProductRequestDto request) {
         return productService.updateProduct(id, request);
     }
 

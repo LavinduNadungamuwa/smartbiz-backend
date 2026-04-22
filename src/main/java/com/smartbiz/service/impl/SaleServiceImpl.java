@@ -6,11 +6,13 @@ import com.smartbiz.entity.Business;
 import com.smartbiz.entity.Customer;
 import com.smartbiz.entity.Sale;
 import com.smartbiz.entity.User;
+import com.smartbiz.exception.AccessDeniedException;
+import com.smartbiz.exception.ResourceNotFoundException;
 import com.smartbiz.repository.CustomerRepository;
 import com.smartbiz.repository.SaleRepository;
 import com.smartbiz.repository.UserRepository;
-import com.smartbiz.security.SecurityUtils;
 import com.smartbiz.service.SaleService;
+import com.smartbiz.util.SecurityHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,14 +34,14 @@ public class SaleServiceImpl implements SaleService {
 
     @Override
     public SaleResponseDto saveSale(SaleRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Business business = loggedInUser.getBusiness();
 
         Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
         if (!customer.getBusiness().getId().equals(business.getId())) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         Sale sale = Sale.builder()
@@ -57,7 +59,7 @@ public class SaleServiceImpl implements SaleService {
 
     @Override
     public List<SaleResponseDto> getAllSales() {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         return saleRepository.findByBusinessId(businessId)
@@ -68,14 +70,14 @@ public class SaleServiceImpl implements SaleService {
 
     @Override
     public SaleResponseDto getSaleById(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Sale sale = saleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sale not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Sale not found"));
 
         if (!sale.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         return mapToDto(sale);
@@ -83,22 +85,22 @@ public class SaleServiceImpl implements SaleService {
 
     @Override
     public SaleResponseDto updateSale(Long id, SaleRequestDto request) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Business business = loggedInUser.getBusiness();
         Long businessId = business.getId();
 
         Sale existing = saleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sale not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Sale not found"));
 
         if (!existing.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
         if (!customer.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         existing.setTotalAmount(request.getTotalAmount());
@@ -114,28 +116,17 @@ public class SaleServiceImpl implements SaleService {
 
     @Override
     public void deleteSale(Long id) {
-        User loggedInUser = getLoggedInUser();
+        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
         Long businessId = loggedInUser.getBusiness().getId();
 
         Sale sale = saleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sale not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Sale not found"));
 
         if (!sale.getBusiness().getId().equals(businessId)) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         saleRepository.deleteById(id);
-    }
-
-    private User getLoggedInUser() {
-        String email = SecurityUtils.getCurrentUserEmail();
-
-        if (email == null) {
-            throw new RuntimeException("No authenticated user found");
-        }
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
     }
 
     private SaleResponseDto mapToDto(Sale sale) {

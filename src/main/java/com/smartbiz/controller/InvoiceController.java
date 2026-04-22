@@ -3,6 +3,7 @@ package com.smartbiz.controller;
 import com.smartbiz.dto.InvoiceRequestDto;
 import com.smartbiz.dto.InvoiceResponseDto;
 import com.smartbiz.service.InvoiceService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class InvoiceController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public InvoiceResponseDto createInvoice(@RequestBody InvoiceRequestDto request) {
+    public InvoiceResponseDto createInvoice(@Valid @RequestBody InvoiceRequestDto request) {
         return invoiceService.saveInvoice(request);
     }
 
@@ -40,7 +41,7 @@ public class InvoiceController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public InvoiceResponseDto updateInvoice(@PathVariable Long id,
-                                            @RequestBody InvoiceRequestDto request) {
+                                            @Valid @RequestBody InvoiceRequestDto request) {
         return invoiceService.updateInvoice(id, request);
     }
 
