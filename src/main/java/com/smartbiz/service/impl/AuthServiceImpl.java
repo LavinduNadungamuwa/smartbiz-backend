@@ -34,10 +34,16 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponseDto register(RegisterRequestDto request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            return new AuthResponseDto(null, "Email already exists");
+
+        // Prevent duplicate email registrations
+        if (userRepository.existsByEmail(request.getEmail())) {
+            return new AuthResponseDto(
+                    null,
+                    "Email already registered"
+            );
         }
 
+        // Create business
         Business business = Business.builder()
                 .businessName(request.getBusinessName())
                 .email(request.getEmail())
@@ -48,8 +54,10 @@ public class AuthServiceImpl implements AuthService {
 
         businessRepository.save(business);
 
-        UserRole assignedRole = UserRole.ADMIN;
+        // Default role
+        UserRole assignedRole = UserRole.USER;
 
+        // Create user
         User user = User.builder()
                 .fullName(request.getOwnerName())
                 .email(request.getEmail())
@@ -61,23 +69,47 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
+        // Generate token
         String token = jwtService.generateToken(user.getEmail());
+
         return new AuthResponseDto(token, "Registration successful");
     }
 
     @Override
     public AuthResponseDto login(LoginRequestDto request) {
-        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
 
+        // Find user by email
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElse(null);
+
+        // User does not exist
         if (user == null) {
-            return new AuthResponseDto(null, "User not found");
+            return new AuthResponseDto(
+                    null,
+                    "Invalid email or password"
+            );
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return new AuthResponseDto(null, "Invalid password");
+        // Validate password
+        boolean passwordMatches = passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword()
+        );
+
+        // Wrong password
+        if (!passwordMatches) {
+            return new AuthResponseDto(
+                    null,
+                    "Invalid email or password"
+            );
         }
 
+        // Generate JWT token
         String token = jwtService.generateToken(user.getEmail());
-        return new AuthResponseDto(token, "Login successful");
+
+        return new AuthResponseDto(
+                token,
+                "Login successful"
+        );
     }
 }
