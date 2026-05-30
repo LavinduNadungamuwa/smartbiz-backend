@@ -63,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
-                .role(assignedRole)
+                .role(UserRole.ADMIN)
                 .business(business)
                 .build();
 
