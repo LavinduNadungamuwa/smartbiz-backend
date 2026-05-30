@@ -30,15 +30,24 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDto createUser(UserRequestDto request) {
-        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
+
+        User loggedInUser =
+                SecurityHelper.getLoggedInUser(userRepository);
+
         Business business = loggedInUser.getBusiness();
 
+        // Prevent creating admins
         if (request.getRole() == UserRole.ADMIN) {
-            throw new BadRequestException("Cannot create another ADMIN from this endpoint");
+            throw new BadRequestException(
+                    "Cannot create another ADMIN from this endpoint"
+            );
         }
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new BadRequestException("Email already exists");
+        // Prevent duplicate email
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException(
+                    "Email already exists"
+            );
         }
 
         User user = User.builder()
@@ -51,15 +60,20 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         User saved = userRepository.save(user);
+
         return mapToDto(saved);
     }
 
     @Override
     public List<UserResponseDto> getAllUsers() {
-        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
-        Long businessId = loggedInUser.getBusiness().getId();
 
-        return userRepository.findByBusinessId(businessId)
+        User loggedInUser =
+                SecurityHelper.getLoggedInUser(userRepository);
+
+        Long businessId =
+                loggedInUser.getBusiness().getId();
+
+        return userRepository.findByBusiness_Id(businessId)
                 .stream()
                 .map(this::mapToDto)
                 .toList();
@@ -67,11 +81,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDto getUserById(Long id) {
-        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
-        Long businessId = loggedInUser.getBusiness().getId();
+
+        User loggedInUser =
+                SecurityHelper.getLoggedInUser(userRepository);
+
+        Long businessId =
+                loggedInUser.getBusiness().getId();
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
 
         if (!user.getBusiness().getId().equals(businessId)) {
             throw new AccessDeniedException("Access denied");
@@ -81,19 +101,37 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDto updateUser(Long id, UserRequestDto request) {
-        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
-        Long businessId = loggedInUser.getBusiness().getId();
+    public UserResponseDto updateUser(Long id,
+                                      UserRequestDto request) {
+
+        User loggedInUser =
+                SecurityHelper.getLoggedInUser(userRepository);
+
+        Long businessId =
+                loggedInUser.getBusiness().getId();
 
         User existing = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
 
         if (!existing.getBusiness().getId().equals(businessId)) {
             throw new AccessDeniedException("Access denied");
         }
 
         if (existing.getRole() == UserRole.ADMIN) {
-            throw new BadRequestException("Admin user cannot be modified here");
+            throw new BadRequestException(
+                    "Admin user cannot be modified here"
+            );
+        }
+
+        // Prevent duplicate email
+        if (!existing.getEmail().equals(request.getEmail())
+                && userRepository.existsByEmail(request.getEmail())) {
+
+            throw new BadRequestException(
+                    "Email already exists"
+            );
         }
 
         existing.setFullName(request.getFullName());
@@ -101,34 +139,48 @@ public class UserServiceImpl implements UserService {
         existing.setPhone(request.getPhone());
         existing.setRole(request.getRole());
 
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            existing.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getPassword() != null
+                && !request.getPassword().isBlank()) {
+
+            existing.setPassword(
+                    passwordEncoder.encode(request.getPassword())
+            );
         }
 
         User updated = userRepository.save(existing);
+
         return mapToDto(updated);
     }
 
     @Override
     public void deleteUser(Long id) {
-        User loggedInUser = SecurityHelper.getLoggedInUser(userRepository);
-        Long businessId = loggedInUser.getBusiness().getId();
+
+        User loggedInUser =
+                SecurityHelper.getLoggedInUser(userRepository);
+
+        Long businessId =
+                loggedInUser.getBusiness().getId();
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
 
         if (!user.getBusiness().getId().equals(businessId)) {
             throw new AccessDeniedException("Access denied");
         }
 
         if (user.getRole() == UserRole.ADMIN) {
-            throw new BadRequestException("Admin user cannot be deleted here");
+            throw new BadRequestException(
+                    "Admin user cannot be deleted here"
+            );
         }
 
         userRepository.deleteById(id);
     }
 
     private UserResponseDto mapToDto(User user) {
+
         return UserResponseDto.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
