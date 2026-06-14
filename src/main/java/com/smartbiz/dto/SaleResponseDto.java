@@ -14,6 +14,7 @@ public class SaleResponseDto {
     private Long id;
     private LocalDateTime saleDate;
     private BigDecimal totalAmount;
+    private BigDecimal discount;
     private PaymentMethod paymentMethod;
     private SaleStatus status;
     private Long businessId;

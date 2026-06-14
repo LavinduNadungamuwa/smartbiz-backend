@@ -25,10 +25,10 @@ public class SaleServiceImpl implements SaleService {
     private final ProductRepository productRepository;
 
     public SaleServiceImpl(SaleRepository saleRepository,
-                           CustomerRepository customerRepository,
-                           UserRepository userRepository,
-                           SaleItemRepository saleItemRepository,
-                           ProductRepository productRepository) {
+            CustomerRepository customerRepository,
+            UserRepository userRepository,
+            SaleItemRepository saleItemRepository,
+            ProductRepository productRepository) {
         this.saleRepository = saleRepository;
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
@@ -50,6 +50,7 @@ public class SaleServiceImpl implements SaleService {
 
         Sale sale = Sale.builder()
                 .totalAmount(request.getTotalAmount())
+                .discount(request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO)
                 .paymentMethod(request.getPaymentMethod())
                 .status(request.getStatus())
                 .business(business)
@@ -64,8 +65,7 @@ public class SaleServiceImpl implements SaleService {
             for (SaleItemRequestDto itemDto : request.getItems()) {
 
                 Product product = productRepository.findById(itemDto.getProductId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException("Product not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
                 SaleItem saleItem = SaleItem.builder()
                         .sale(saved)
@@ -74,8 +74,7 @@ public class SaleServiceImpl implements SaleService {
                         .unitPrice(product.getUnitPrice())
                         .subtotal(
                                 product.getUnitPrice()
-                                        .multiply(BigDecimal.valueOf(itemDto.getQuantity()))
-                        )
+                                        .multiply(BigDecimal.valueOf(itemDto.getQuantity())))
                         .build();
 
                 saleItemRepository.save(saleItem);
@@ -135,6 +134,7 @@ public class SaleServiceImpl implements SaleService {
         }
 
         existing.setTotalAmount(request.getTotalAmount());
+        existing.setDiscount(request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO);
         existing.setPaymentMethod(request.getPaymentMethod());
         existing.setStatus(request.getStatus());
         existing.setCustomer(customer);
@@ -170,14 +170,14 @@ public class SaleServiceImpl implements SaleService {
         System.out.println(
                 "Sale " + sale.getId() +
                         " items count = " +
-                        sale.getSaleItems().size()
-        );
+                        sale.getSaleItems().size());
 
         return SaleResponseDto.builder()
                 .id(sale.getId())
                 .products(products)
                 .saleDate(sale.getSaleDate())
                 .totalAmount(sale.getTotalAmount())
+                .discount(sale.getDiscount())
                 .paymentMethod(sale.getPaymentMethod())
                 .status(sale.getStatus())
                 .businessId(sale.getBusiness().getId())
