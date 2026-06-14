@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Entity
 @Table(name = "sales")
 @Getter
@@ -29,6 +28,10 @@ public class Sale {
 
     @Column(nullable = false)
     private BigDecimal totalAmount;
+
+    @Column(nullable = false, columnDefinition = "DECIMAL(19,2) DEFAULT 0.00")
+    @Builder.Default
+    private BigDecimal discount = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod;
@@ -53,7 +56,7 @@ public class Sale {
 
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<SaleItem> saleItems =  new ArrayList<>();
+    private List<SaleItem> saleItems = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
