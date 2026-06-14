@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 public class SaleRequestDto {
     private BigDecimal totalAmount;
+    private BigDecimal discount;
     private PaymentMethod paymentMethod;
     private SaleStatus status;
     private Long customerId;
