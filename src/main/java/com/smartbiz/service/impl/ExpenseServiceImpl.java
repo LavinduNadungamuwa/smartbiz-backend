@@ -13,6 +13,7 @@ import com.smartbiz.service.ExpenseService;
 import com.smartbiz.util.SecurityHelper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -37,6 +38,7 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .category(request.getCategory())
                 .amount(request.getAmount())
                 .expenseDate(request.getExpenseDate())
+                .paymentMethod(request.getPaymentMethod())
                 .notes(request.getNotes())
                 .business(business)
                 .user(loggedInUser)
@@ -89,6 +91,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         existing.setCategory(request.getCategory());
         existing.setAmount(request.getAmount());
         existing.setExpenseDate(request.getExpenseDate());
+        existing.setPaymentMethod(request.getPaymentMethod());
         existing.setNotes(request.getNotes());
         existing.setBusiness(business);
         existing.setUser(loggedInUser);
@@ -115,10 +118,12 @@ public class ExpenseServiceImpl implements ExpenseService {
     private ExpenseResponseDto mapToDto(Expense expense) {
         return ExpenseResponseDto.builder()
                 .id(expense.getId())
+                .createdAt(expense.getCreatedAt())
                 .title(expense.getTitle())
                 .category(expense.getCategory())
                 .amount(expense.getAmount())
                 .expenseDate(expense.getExpenseDate())
+                .paymentMethod(expense.getPaymentMethod())
                 .notes(expense.getNotes())
                 .businessId(expense.getBusiness().getId())
                 .userId(expense.getUser().getId())

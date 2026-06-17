@@ -1,9 +1,11 @@
 package com.smartbiz.entity;
 
+import com.smartbiz.enums.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,7 +29,18 @@ public class Expense {
     @Column(nullable = false)
     private BigDecimal amount;
 
-    private LocalDateTime expenseDate;
+    private LocalDate expenseDate;
+
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method")
+    private PaymentMethod paymentMethod;
 
     private String notes;
 
@@ -38,11 +51,4 @@ public class Expense {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @PrePersist
-    public void prePersist() {
-        if (this.expenseDate == null) {
-            this.expenseDate = LocalDateTime.now();
-        }
-    }
 }
