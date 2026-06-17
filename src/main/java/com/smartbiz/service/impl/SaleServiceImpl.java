@@ -133,15 +133,48 @@ public class SaleServiceImpl implements SaleService {
             throw new AccessDeniedException("Access denied");
         }
 
+        // Update sale details
         existing.setTotalAmount(request.getTotalAmount());
-        existing.setDiscount(request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO);
+        existing.setDiscount(
+                request.getDiscount() != null
+                        ? request.getDiscount()
+                        : BigDecimal.ZERO);
         existing.setPaymentMethod(request.getPaymentMethod());
         existing.setStatus(request.getStatus());
         existing.setCustomer(customer);
         existing.setUser(loggedInUser);
         existing.setBusiness(business);
 
+        // Remove old sale items
+        saleItemRepository.deleteBySaleId(existing.getId());
+
+        // Add updated sale items
+        if (request.getItems() != null) {
+
+            for (SaleItemRequestDto itemDto : request.getItems()) {
+
+                Product product = productRepository.findById(itemDto.getProductId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+                SaleItem saleItem = SaleItem.builder()
+                        .sale(existing)
+                        .product(product)
+                        .quantity(itemDto.getQuantity())
+                        .unitPrice(product.getUnitPrice())
+                        .subtotal(
+                                product.getUnitPrice()
+                                        .multiply(BigDecimal.valueOf(itemDto.getQuantity())))
+                        .build();
+
+                saleItemRepository.save(saleItem);
+            }
+        }
+
         Sale updated = saleRepository.save(existing);
+
+        updated = saleRepository.findById(updated.getId())
+                .orElseThrow();
+
         return mapToDto(updated);
     }
 
