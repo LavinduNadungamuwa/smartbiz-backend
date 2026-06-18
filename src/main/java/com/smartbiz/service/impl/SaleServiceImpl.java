@@ -193,7 +193,25 @@ public class SaleServiceImpl implements SaleService {
                 .orElse(null);
 
         if (invoice != null) {
+
             invoice.setTotalAmount(updated.getTotalAmount());
+
+            // Sync invoice status with sale status
+            switch (updated.getStatus()) {
+
+                case COMPLETED:
+                    invoice.setStatus(InvoiceStatus.PAID);
+                    break;
+
+                case PENDING:
+                    invoice.setStatus(InvoiceStatus.PENDING);
+                    break;
+
+                case CANCELLED:
+                    invoice.setStatus(InvoiceStatus.CANCELLED);
+                    break;
+            }
+
             invoiceRepository.save(invoice);
         }
 
