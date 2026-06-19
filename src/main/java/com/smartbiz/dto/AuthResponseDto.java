@@ -8,4 +8,8 @@ import lombok.Data;
 public class AuthResponseDto {
     private String token;
     private String message;
+    private Long userId;
+    private String email;
+    private Long businessId;
+    private String businessName;
 }

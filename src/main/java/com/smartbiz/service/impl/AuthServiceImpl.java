@@ -39,7 +39,11 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByEmail(request.getEmail())) {
             return new AuthResponseDto(
                     null,
-                    "Email already registered"
+                    "Email already registered",
+                    null,
+                    null,
+                    null,
+                    null
             );
         }
 
@@ -72,7 +76,16 @@ public class AuthServiceImpl implements AuthService {
         // Generate token
         String token = jwtService.generateToken(user.getEmail());
 
-        return new AuthResponseDto(token, "Registration successful");
+        return new AuthResponseDto(
+                token,
+                "Registration successful",
+
+                user.getId(),
+                user.getEmail(),
+
+                business.getId(),
+                business.getBusinessName()
+        );
     }
 
     @Override
@@ -86,7 +99,11 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             return new AuthResponseDto(
                     null,
-                    "Invalid email or password"
+                    "Invalid email or password",
+                    null,
+                    null,
+                    null,
+                    null
             );
         }
 
@@ -100,7 +117,11 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordMatches) {
             return new AuthResponseDto(
                     null,
-                    "Invalid email or password"
+                    "Invalid email or password",
+                    null,
+                    null,
+                    null,
+                    null
             );
         }
 
@@ -109,7 +130,13 @@ public class AuthServiceImpl implements AuthService {
 
         return new AuthResponseDto(
                 token,
-                "Login successful"
+                "Login successful",
+
+                user.getId(),
+                user.getEmail(),
+
+                user.getBusiness().getId(),
+                user.getBusiness().getBusinessName()
         );
     }
 }
