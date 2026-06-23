@@ -71,6 +71,10 @@ public class SaleServiceImpl implements SaleService {
                 Product product = productRepository.findById(itemDto.getProductId())
                         .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
+                // Reduce product stock quantity
+                product.setStockQuantity(product.getStockQuantity() - itemDto.getQuantity());
+                productRepository.save(product);
+
                 SaleItem saleItem = SaleItem.builder()
                         .sale(saved)
                         .product(product)
@@ -162,6 +166,15 @@ public class SaleServiceImpl implements SaleService {
         existing.setUser(loggedInUser);
         existing.setBusiness(business);
 
+        // Restore stock of old items before deleting them
+        if (existing.getSaleItems() != null) {
+            for (SaleItem oldItem : existing.getSaleItems()) {
+                Product product = oldItem.getProduct();
+                product.setStockQuantity(product.getStockQuantity() + oldItem.getQuantity());
+                productRepository.save(product);
+            }
+        }
+
         // Remove old sale items
         saleItemRepository.deleteBySaleId(existing.getId());
 
@@ -172,6 +185,10 @@ public class SaleServiceImpl implements SaleService {
 
                 Product product = productRepository.findById(itemDto.getProductId())
                         .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+                // Reduce product stock quantity
+                product.setStockQuantity(product.getStockQuantity() - itemDto.getQuantity());
+                productRepository.save(product);
 
                 SaleItem saleItem = SaleItem.builder()
                         .sale(existing)
@@ -233,7 +250,16 @@ public class SaleServiceImpl implements SaleService {
             throw new AccessDeniedException("Access denied");
         }
 
-        saleRepository.deleteById(id);
+        // Restore stock of items in deleted sale
+        if (sale.getSaleItems() != null) {
+            for (SaleItem item : sale.getSaleItems()) {
+                Product product = item.getProduct();
+                product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
+                productRepository.save(product);
+            }
+        }
+
+        saleRepository.delete(sale);
     }
 
     private SaleResponseDto mapToDto(Sale sale) {
